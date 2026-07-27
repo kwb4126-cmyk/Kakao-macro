@@ -2,109 +2,61 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>카카오톡 챗봇 관리 패널</title>
-    <style>
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: 'Apple SD Gothic Neo', sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .container {
-            width: 100%;
-            max-width: 400px;
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        h2 { text-align: center; color: #ffeb3b; font-size: 20px; margin-bottom: 20px; }
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        input { background: #2c2c2c; color: white; outline: none; }
-        button { background: #4caf50; color: white; font-weight: bold; cursor: pointer; }
-        .danger-btn { background: #f44336; }
-        .locked-btn { background: #555; color: #aaa; cursor: not-allowed; }
-        .section-title { font-size: 14px; color: #888; margin-top: 20px; margin-bottom: 5px; }
-        .status { text-align: center; font-size: 14px; margin-top: 10px; }
-    </style>
+    <title>매크로 제어 패널</title>
 </head>
-<body>
-
-    <div class="container">
-        <h2>🤖 카카오톡 챗봇 제어 패널</h2>
-
-        <!-- 1. 기본 기능 (누구나 사용 가능) -->
-        <div class="section-title">📂 기본 기능 (무료)</div>
-        <button onclick="triggerAction('basic_macro')">매크로 기본 실행</button>
-        <button onclick="triggerAction('delt')">선택 유저 강퇴 (delt)</button>
-
-        <!-- 2. 유료 기능 (올킥 등) -->
-        <div class="section-title">👑 프리미엄 기능 (유료키 필요)</div>
+<body style="padding: 20px; font-family: sans-serif;">
+    <h2>🤖 카카오톡 매크로 제어 패널</h2>
+    
+    <form id="macroForm">
+        <label><b>[메크로설정]</b></label><br><br>
         
-        <!-- 인증 전 입력 박스 -->
-        <div id="authBox">
-            <input type="text" id="licenseKey" placeholder="프리미엄 라이선스 키 입력">
-            <button onclick="verifyKey()" style="background: #ff9800;">유료키 인증하기</button>
-            <div id="authMsg" class="status"></div>
-        </div>
-
-        <!-- 인증 성공 시 활성화되는 유료 버튼 -->
-        <div id="premiumPanel" style="display: none;">
-            <p style="color: #4caf50; text-align: center; font-size: 13px; margin: 5px 0;">✔ 프리미엄 인증 완료!</p>
-            <button onclick="triggerAction('allkick')" class="danger-btn">🔥 전체 올킥 실행</button>
-        </div>
+        <label>방이름 (,로 여러 개 가능):</label><br>
+        <input type="text" id="roomName" placeholder="예: 방이름1,방이름2" style="width: 100%; padding: 8px; margin-bottom: 10px;" required><br>
         
-        <!-- 인증 전에는 잠겨 있는 버튼 예시 -->
-        <button id="lockedAllKickBtn" class="locked-btn" onclick="alert('유료키 인증이 필요한 기능입니다!')">🔥 전체 올킥 실행 (잠김)</button>
-    </div>
+        <label>보낼 메시지 (이모지 허용):</label><br>
+        <textarea id="message" placeholder="보낼 메시지를 입력하세요 (예: 👋 안녕하세요!)" style="width: 100%; height: 80px; padding: 8px; margin-bottom: 10px;" required></textarea><br>
+        
+        <label>주기 (단위 초):</label><br>
+        <input type="number" id="interval" placeholder="예: 5" style="width: 100%; padding: 8px; margin-bottom: 15px;" required><br>
+        
+        <button type="submit" style="width: 100%; padding: 12px; background: #00C73C; color: white; font-weight: bold; border: none; border-radius: 5px;">매크로 시작하기</button>
+    </form>
+
+    <p id="result" style="margin-top: 15px; font-weight: bold;"></p>
 
     <script>
-        // 사용할 수 있는 유료키 리스트 (나중에 구글 시트나 DB로 연동 가능)
-        const validKeys = ["VIP-1234", "ADMIN-9999", "PASS-2026"];
+        document.getElementById('macroForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const rooms = document.getElementById('roomName').value;
+            const message = document.getElementById('message').value;
+            const interval = document.getElementById('interval').value;
+            
+            // 아까 Serveo에서 발급받은 본인의 터널링 주소를 여기에 넣으세요!
+            const tunnelUrl = 'https://df699b682e4953c8-58-121-227-252.serveousercontent.com/api/macro';
 
-        function verifyKey() {
-            const inputVal = document.getElementById('licenseKey').value.trim();
-            const msgDiv = document.getElementById('authMsg');
+            const res = document.getElementById('result');
+            res.innerText = "전송 중...";
 
-            if (validKeys.includes(inputVal)) {
-                msgDiv.style.color = "#4caf50";
-                msgDiv.innerText = "인증 성공!";
+            try {
+                const response = await fetch(tunnelUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rooms, message, interval })
+                });
                 
-                // 인증 성공 시 입력창 숨기고 진짜 유료 버튼 보여주기
-                document.getElementById('authBox').style.display = 'none';
-                document.getElementById('lockedAllKickBtn').style.display = 'none';
-                document.getElementById('premiumPanel').style.display = 'block';
-            } else {
-                msgDiv.style.color = "#f44336";
-                msgDiv.innerText = "유효하지 않은 라이선스 키입니다.";
+                if (response.ok) {
+                    res.innerText = "✅ 매크로 설정이 Termux로 전송되었습니다!";
+                    res.style.color = "green";
+                } else {
+                    res.innerText = "❌ 전송 실패 (Termux 터널링 주소나 서버를 확인하세요)";
+                    res.style.color = "red";
+                }
+            } catch (err) {
+                res.innerText = "❌ 에러 발생: 폰 서버가 켜져 있는지 확인하세요.";
+                res.style.color = "red";
             }
-        }
-
-        function triggerAction(actionType) {
-            if(actionType === 'basic_macro') {
-                alert("기본 매크로가 실행되었습니다.");
-            } else if(actionType === 'delt') {
-                alert("delt 명령어가 전송되었습니다.");
-            } else if(actionType === 'allkick') {
-                alert("🔥 올킥 명령어가 전송되었습니다! (유료 기능 동작)");
-            }
-        }
+        });
     </script>
-
 </body>
 </html>
