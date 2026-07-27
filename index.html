@@ -2,59 +2,156 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>매크로 제어 패널</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오톡 매크로 제어 패널</title>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 22px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #444;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus {
+            border-color: #00C73C;
+        }
+        textarea {
+            resize: vertical;
+            height: 80px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #00C73C;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 5px;
+        }
+        button:hover {
+            background: #00b034;
+        }
+        #result {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
 </head>
-<body style="padding: 20px; font-family: sans-serif;">
-    <h2>🤖 카카오톡 매크로 제어 패널</h2>
-    
-    <form id="macroForm">
-        <label><b>[메크로설정]</b></label><br><br>
-        
-        <label>방이름 (,로 여러 개 가능):</label><br>
-        <input type="text" id="roomName" placeholder="예: 방이름1,방이름2" style="width: 100%; padding: 8px; margin-bottom: 10px;" required><br>
-        
-        <label>보낼 메시지 (이모지 허용):</label><br>
-        <textarea id="message" placeholder="보낼 메시지를 입력하세요 (예: 👋 안녕하세요!)" style="width: 100%; height: 80px; padding: 8px; margin-bottom: 10px;" required></textarea><br>
-        
-        <label>주기 (단위 초):</label><br>
-        <input type="number" id="interval" placeholder="예: 5" style="width: 100%; padding: 8px; margin-bottom: 15px;" required><br>
-        
-        <button type="submit" style="width: 100%; padding: 12px; background: #00C73C; color: white; font-weight: bold; border: none; border-radius: 5px;">매크로 시작하기</button>
-    </form>
+<body>
 
-    <p id="result" style="margin-top: 15px; font-weight: bold;"></p>
+    <div class="card">
+        <h2>🤖 카카오톡 매크로 제어</h2>
+        
+        <form id="macroForm">
+            <!-- 터널링 주소 입력 칸 추가 -->
+            <div class="form-group">
+                <label>🌐 Termux 터널링 주소</label>
+                <input type="text" id="tunnelUrl" placeholder="https://xxxx.serveousercontent.com" required>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+            <div class="form-group">
+                <label>📌 [메크로설정] 방 이름</label>
+                <input type="text" id="roomName" placeholder="예: 그어가, 브훔" required>
+            </div>
+            
+            <div class="form-group">
+                <label>💬 보낼 메시지 (이모지 허용)</label>
+                <textarea id="message" placeholder="보낼 메시지를 입력하세요 (예: 👋 안녕하세요!)" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>⏱️ 주기 (단위: 초)</label>
+                <input type="number" id="interval" placeholder="예: 5" required>
+            </div>
+            
+            <button type="submit">매크로 시작하기</button>
+        </form>
+
+        <p id="result"></p>
+    </div>
 
     <script>
         document.getElementById('macroForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            let baseUrl = document.getElementById('tunnelUrl').value.trim();
             const rooms = document.getElementById('roomName').value;
             const message = document.getElementById('message').value;
             const interval = document.getElementById('interval').value;
             
-            // 아까 Serveo에서 발급받은 본인의 터널링 주소를 여기에 넣으세요!
-            const tunnelUrl = 'https://df699b682e4953c8-58-121-227-252.serveousercontent.com/api/macro';
+            // 주소 뒤에 슬래시가 있으면 제거 후 /api/macro 붙이기
+            if (baseUrl.endsWith('/')) {
+                baseUrl = baseUrl.slice(0, -1);
+            }
+            const targetUrl = baseUrl + '/api/macro';
 
             const res = document.getElementById('result');
             res.innerText = "전송 중...";
+            res.style.color = "#666";
 
             try {
-                const response = await fetch(tunnelUrl, {
+                const response = await fetch(targetUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ rooms, message, interval })
                 });
                 
                 if (response.ok) {
-                    res.innerText = "✅ 매크로 설정이 Termux로 전송되었습니다!";
-                    res.style.color = "green";
+                    res.innerText = "✅ 매크로 설정 전송 성공!";
+                    res.style.color = "#00C73C";
                 } else {
-                    res.innerText = "❌ 전송 실패 (Termux 터널링 주소나 서버를 확인하세요)";
-                    res.style.color = "red";
+                    res.innerText = "❌ 전송 실패 (주소나 폰 서버를 확인하세요)";
+                    res.style.color = "#ff4d4d";
                 }
             } catch (err) {
-                res.innerText = "❌ 에러 발생: 폰 서버가 켜져 있는지 확인하세요.";
-                res.style.color = "red";
+                res.innerText = "❌ 에러 발생: 폰 서버가 켜져 있거나 주소가 올바른지 확인하세요.";
+                res.style.color = "#ff4d4d";
             }
         });
     </script>
