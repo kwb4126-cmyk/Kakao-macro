@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오톡 챗봇 관리 패널</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Apple SD Gothic Neo', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        h2 { text-align: center; color: #ffeb3b; font-size: 20px; margin-bottom: 20px; }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input { background: #2c2c2c; color: white; outline: none; }
+        button { background: #4caf50; color: white; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        .danger-btn { background: #f44336; margin-top: 15px; }
+        #controlPanel { display: none; margin-top: 20px; }
+        .status { text-align: center; font-size: 14px; margin-top: 10px; color: #888; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>🔑 유료키 인증 시스템</h2>
+        
+        <!-- 인증 전 화면 -->
+        <div id="authBox">
+            <input type="text" id="licenseKey" placeholder="유료 라이선스 키 입력">
+            <button onclick="verifyKey()">인증하기</button>
+            <div id="authMsg" class="status"></div>
+        </div>
+
+        <!-- 인증 성공 후 나타나는 봇 제어 패널 -->
+        <div id="controlPanel">
+            <p style="color: #4caf50; text-align: center; font-weight: bold;">✔ 인증 완료: VIP 멤버</p>
+            <button onclick="triggerAction('delt')" class="danger-btn">선택 유저 강퇴 (delt)</button>
+            <button onclick="triggerAction('allkick')" class="danger-btn">전체 올킥 실행</button>
+        </div>
+    </div>
+
+    <script>
+        // 임시 유료키 리스트 (나중에 서버나 데이터베이스로 연동 가능)
+        const validKeys = ["VIP-1234", "ADMIN-9999", "TEST-KEY"];
+
+        function verifyKey() {
+            const inputVal = document.getElementById('licenseKey').value.trim();
+            const msgDiv = document.getElementById('authMsg');
+
+            if (validKeys.includes(inputVal)) {
+                msgDiv.style.color = "#4caf50";
+                msgDiv.innerText = "인증 성공!";
+                
+                // 인증 성공 시 입력창 숨기고 제어 패널 보여주기
+                document.getElementById('authBox').style.display = 'none';
+                document.getElementById('controlPanel').style.display = 'block';
+            } else {
+                msgDiv.style.color = "#f44336";
+                msgDiv.innerText = "유효하지 않은 라이선스 키입니다.";
+            }
+        }
+
+        function triggerAction(actionType) {
+            if(actionType === 'delt') {
+                alert("delt 명령어가 전송되었습니다. (웹훅 연동 지점)");
+                // 여기에 Vercel 서버리스 함수나 외부 웹훅으로 신호를 쏘는 코드를 넣을 수 있습니다.
+            } else if(actionType === 'allkick') {
+                alert("올킥 명령어가 전송되었습니다. (웹훅 연동 지점)");
+            }
+        }
+    </script>
+
+</body>
+</html>
